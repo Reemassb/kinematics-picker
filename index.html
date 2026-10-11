@@ -1,0 +1,671 @@
+<title>Kinematics Equation Picker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: lab-notebook graph paper; one centered column, tabbed modes; every variable keeps its own color everywhere */
+:root{
+  --bg:#f1f4f8; --surface:#ffffff; --ink:#152031; --muted:#56637a; --line:#d5dce6; --grid:rgba(40,80,140,.07);
+  --soft:#e8edf4;
+  --c-dx:#0b8577; --c-vi:#2459c9; --c-vf:#7440c4; --c-a:#c9541c; --c-dt:#3b8524;
+  --ok:#1d8448; --ok-bg:#e3f4ea; --bad:#bf3434; --bad-bg:#fbe8e8; --warn-bg:#fdf3dc;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151d; --surface:#19202b; --ink:#e7ecf3; --muted:#9ba7ba; --line:#2d3746; --grid:rgba(140,170,220,.06);
+  --soft:#222b38;
+  --c-dx:#3fc6b6; --c-vi:#729fff; --c-vf:#b48fff; --c-a:#ff9a5e; --c-dt:#84d062;
+  --ok:#55c985; --ok-bg:#163223; --bad:#ff7d7d; --bad-bg:#3a1d1f; --warn-bg:#352c16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151d; --surface:#19202b; --ink:#e7ecf3; --muted:#9ba7ba; --line:#2d3746; --grid:rgba(140,170,220,.06);
+  --soft:#222b38;
+  --c-dx:#3fc6b6; --c-vi:#729fff; --c-vf:#b48fff; --c-a:#ff9a5e; --c-dt:#84d062;
+  --ok:#55c985; --ok-bg:#163223; --bad:#ff7d7d; --bad-bg:#3a1d1f; --warn-bg:#352c16; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;}
+.wrap{max-width:960px;margin:0 auto;padding:28px 18px 64px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.9rem,5vw,2.8rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:800}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+sub{font-size:.7em}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--c-vi);outline-offset:2px}
+
+/* header */
+.top{display:grid;gap:14px;margin-bottom:22px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:62ch}
+.tape{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.tape svg{width:min(360px,100%);height:auto;color:var(--ink)}
+.tape span{font-family:var(--f-mono);font-size:.75rem;color:var(--muted)}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--line);margin-bottom:24px}
+.tab{background:none;border:0;padding:10px 14px;font-family:var(--f-display);font-weight:600;font-size:1.02rem;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+
+/* variables */
+.v{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+.v-dx{color:var(--c-dx)}.v-vi{color:var(--c-vi)}.v-vf{color:var(--c-vf)}.v-a{color:var(--c-a)}.v-dt{color:var(--c-dt)}
+
+.section{display:grid;gap:14px;margin-bottom:34px}
+.section > p{max-width:65ch}
+.vars{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.vtile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:2px;min-width:0}
+.vtile .v{font-size:1.5rem}
+.vtile small{color:var(--muted);font-family:var(--f-mono);font-size:.78rem}
+@media (max-width:640px){.vars{grid-template-columns:repeat(2,1fr)}}
+
+.eqs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (max-width:640px){.eqs{grid-template-columns:1fr}}
+.eq{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px;text-align:left;transition:opacity .2s,border-color .2s,transform .15s}
+.eq .math{font-family:var(--f-mono);font-size:1.18rem;font-weight:500}
+.eq .math .v{font-weight:600}
+.eq .meta{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.eq .num{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.badge{font-size:.8rem;font-weight:700;border-radius:999px;padding:2px 10px;background:var(--soft);color:var(--muted)}
+.badge .v{text-decoration:line-through;text-decoration-thickness:2px}
+.eq.dim{opacity:.35}
+.eq.hit{border-color:var(--ink);transform:translateY(-2px)}
+button.eq:hover{border-color:var(--muted)}
+.eq.right{border-color:var(--ok);background:var(--ok-bg)}
+.eq.wrong{border-color:var(--bad);background:var(--bad-bg)}
+
+.chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:.95rem}
+.chip[aria-pressed="true"]{border-color:var(--ink);background:var(--soft)}
+.picker-out{min-height:1.6em;color:var(--muted)}
+
+ol.method{margin:0;padding-left:1.4em;display:grid;gap:6px;max-width:65ch}
+ol.method li::marker{font-family:var(--f-mono);font-weight:600;color:var(--muted)}
+
+.clues{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.clues th,.clues td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.clues th{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+.clues tr:last-child td{border-bottom:0}
+.tablebox{overflow-x:auto}
+
+/* practice */
+.pnav{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:16px}
+.pnum{flex:0 0 auto;width:38px;height:38px;border-radius:8px;border:2px solid var(--line);background:var(--surface);font-family:var(--f-mono);font-weight:600;font-variant-numeric:tabular-nums}
+.pnum.cur{border-color:var(--ink)}
+.pnum.done{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.prob{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px;margin-bottom:16px}
+.prob .tag{font-family:var(--f-mono);font-size:.78rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.prob-text{font-size:1.12rem;max-width:65ch}
+.step{border-left:3px solid var(--line);padding:4px 0 4px 18px;display:grid;gap:12px;margin-bottom:22px}
+.step.active{border-left-color:var(--ink)}
+.step.locked{opacity:.4;pointer-events:none}
+.step.donestep{border-left-color:var(--ok)}
+.step h3 span{font-family:var(--f-mono);color:var(--muted);font-weight:500;margin-right:6px}
+.rows{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;padding:6px 8px;border-radius:8px}
+.row.bad{background:var(--bad-bg)}
+.row.good{background:var(--ok-bg)}
+.row .lbl{display:flex;flex-direction:column;line-height:1.2}
+.row .lbl small{color:var(--muted);font-size:.8rem}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:2px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 12px;font-size:.92rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:520px){.row{grid-template-columns:1fr}}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--bg);border-radius:9px;padding:8px 18px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.msg{border-radius:10px;padding:10px 14px;max-width:65ch}
+.msg.ok{background:var(--ok-bg);color:var(--ink);border-left:4px solid var(--ok)}
+.msg.bad{background:var(--bad-bg);border-left:4px solid var(--bad)}
+.msg.hint{background:var(--warn-bg);border-left:4px solid var(--c-a)}
+.givens{display:flex;gap:8px;flex-wrap:wrap}
+.given{background:var(--soft);border-radius:8px;padding:4px 10px;font-family:var(--f-mono);font-size:.92rem}
+.ans{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ans input{font:inherit;font-family:var(--f-mono);font-size:1.05rem;width:160px;padding:7px 10px;border-radius:8px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.ans .unit{font-family:var(--f-mono);color:var(--muted)}
+.solution{background:var(--soft);border-radius:10px;padding:12px 16px;font-family:var(--f-mono);font-size:.95rem;display:grid;gap:6px;overflow-x:auto}
+.pfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* speed round */
+.speed{display:grid;gap:18px}
+.scorebar{display:flex;gap:22px;flex-wrap:wrap;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.scorebar div{display:grid}
+.scorebar small{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.scorebar b{font-size:1.5rem}
+.card-q{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:10px}
+.qline{font-size:1.2rem;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+.qline .k{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);min-width:56px}
+.qline .v{font-size:1.35rem}
+.progress{height:6px;background:var(--soft);border-radius:999px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--ink);transition:width .3s}
+/* report */
+.fields{display:flex;gap:14px;flex-wrap:wrap}
+.field{display:grid;gap:4px;flex:1 1 220px;min-width:0}
+.field span{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field input{font:inherit;padding:8px 12px;border-radius:8px;border:2px solid var(--line);background:var(--surface);color:var(--ink);width:100%}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px}
+.tile small{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tile b{font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.tile.main{border-color:var(--ink);border-width:2px}
+.rep td,.rep th{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rep td:nth-child(2){white-space:normal}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.82rem;font-weight:700}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.no{background:var(--soft);color:var(--muted)}
+.keynote{color:var(--muted);font-size:.9rem;max-width:70ch;margin-top:10px}
+.danger{margin-top:28px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Grade 12 Physics · 1-D motion</div>
+    <h1>Which kinematic equation do I use?</h1>
+    <p class="lede">Every constant-acceleration problem involves five quantities, and each equation leaves exactly one of them out. Find the quantity your problem never mentions, and you have found your equation.</p>
+    <div class="tape" aria-hidden="true">
+      <svg viewBox="0 0 360 34">
+        <line x1="4" y1="17" x2="356" y2="17" stroke="currentColor" stroke-opacity=".25" stroke-width="10" stroke-linecap="round"/>
+        <g fill="currentColor" id="dots"></g>
+      </svg>
+      <span>ticker tape · equal time gaps, growing spacing = acceleration</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-learn" aria-selected="true" data-tab="learn">How to choose</button>
+    <button class="tab" role="tab" id="tab-practice" aria-selected="false" data-tab="practice">Guided practice</button>
+    <button class="tab" role="tab" id="tab-speed" aria-selected="false" data-tab="speed">Speed round</button>
+    <button class="tab" role="tab" id="tab-report" aria-selected="false" data-tab="report">My report</button>
+  </nav>
+
+  <main>
+    <section id="panel-learn">
+      <div class="section">
+        <h2>The five quantities</h2>
+        <div class="vars" id="varTiles"></div>
+      </div>
+
+      <div class="section">
+        <h2>The four equations</h2>
+        <p>Each card shows the one quantity that equation does <b>not</b> contain. Tap the quantity your problem leaves out.</p>
+        <div class="chips" id="picker" aria-label="Quantity left out of the problem"></div>
+        <p class="picker-out" id="pickerOut">Nothing selected yet.</p>
+        <div class="eqs" id="eqCards"></div>
+      </div>
+
+      <div class="section">
+        <h2>The method</h2>
+        <ol class="method">
+          <li>Draw a quick sketch and choose a positive direction.</li>
+          <li>List every quantity the problem <b>gives</b> you, converting units (km/h ÷ 3.6 = m/s).</li>
+          <li>Mark the one quantity you must <b>find</b>.</li>
+          <li>The fifth quantity is the one that is <b>not in the problem</b>. Cross it out.</li>
+          <li>Pick the equation that also leaves that quantity out.</li>
+          <li>Rearrange, substitute, solve, and ask: is the answer reasonable? Is the sign right?</li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2>Hidden clues in the wording</h2>
+        <div class="tablebox">
+          <table class="clues">
+            <thead><tr><th>The problem says…</th><th>So you know…</th></tr></thead>
+            <tbody id="clueBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-practice" hidden></section>
+    <section id="panel-speed" hidden></section>
+    <section id="panel-report" hidden>
+      <div class="section">
+        <h2>Completion report</h2>
+        <p>Enter your name, then download a PDF of your progress to hand in. Your work is saved in this browser, so you can come back and finish later.</p>
+        <div class="fields">
+          <label class="field"><span>Full name</span><input id="stuName" autocomplete="name" placeholder="e.g. Sara Al-Ahmad"></label>
+          <label class="field"><span>Class / section</span><input id="stuClass" placeholder="e.g. 12C"></label>
+        </div>
+      </div>
+      <div class="tiles" id="repTiles"></div>
+      <div class="tablebox"><table class="clues rep" id="repTable"></table></div>
+      <p class="keynote" id="repKey"></p>
+      <div class="actions" style="margin-top:18px">
+        <button type="button" class="btn" id="pdfBtn">Download PDF report</button>
+        <span id="pdfMsg" class="picker-out"></span>
+      </div>
+      <div class="danger">
+        <button type="button" class="btn ghost" id="resetBtn">Start over</button>
+        <span id="resetConfirm" hidden>Erase all progress? <button type="button" class="btn ghost" id="resetYes">Yes, erase</button> <button type="button" class="btn ghost" id="resetNo">Cancel</button></span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+// ---------- data ----------
+const V = {
+  dx:{s:'Δx', name:'displacement', unit:'m'},
+  vi:{s:'v<sub>i</sub>', name:'initial velocity', unit:'m/s'},
+  vf:{s:'v<sub>f</sub>', name:'final velocity', unit:'m/s'},
+  a:{s:'a', name:'acceleration', unit:'m/s²'},
+  dt:{s:'Δt', name:'time interval', unit:'s'}
+};
+const ORDER = ['dx','vi','vf','a','dt'];
+const sym = k => `<span class="v v-${k}">${V[k].s}</span>`;
+
+const EQ = [
+  {missing:'a',  html:`${sym('dx')} = ½(${sym('vi')} + ${sym('vf')})${sym('dt')}`},
+  {missing:'dx', html:`${sym('vf')} = ${sym('vi')} + ${sym('a')}${sym('dt')}`},
+  {missing:'vf', html:`${sym('dx')} = ${sym('vi')}${sym('dt')} + ½${sym('a')}(${sym('dt')})²`},
+  {missing:'dt', html:`${sym('vf')}² = ${sym('vi')}² + 2${sym('a')}${sym('dx')}`}
+];
+const eqFor = none => EQ.findIndex(e => e.missing === none);
+
+const CLUES = [
+  ['“starts from rest”, “from a standstill”', `${sym('vi')} = 0`],
+  ['“comes to a stop”, “brought to rest”', `${sym('vf')} = 0`],
+  ['“dropped”', `${sym('vi')} = 0 and ${sym('a')} = −9.8 m/s² (on Earth, up positive)`],
+  ['“reaches its highest point”', `${sym('vf')} = 0 at the top`],
+  ['“slows down”, “decelerates”, “brakes”', `${sym('a')} is opposite to the motion, so it is negative`],
+  ['a speed in km/h', 'divide by 3.6 to get m/s'],
+  ['“uniformly”, “steadily”', `${sym('a')} is constant, so these equations apply`]
+];
+
+const P = [
+  {tag:'Speeding up', text:'A motorcycle speeds up uniformly from 12.0 m/s to 31.5 m/s in 3.90 s. What is its acceleration?',
+   given:{vi:'12.0 m/s', vf:'31.5 m/s', dt:'3.90 s'}, find:'a', none:'dx', hidden:[],
+   ans:5.00, sol:['a = (v_f − v_i) / Δt','a = (31.5 − 12.0) / 3.90','a = 5.00 m/s²']},
+  {tag:'Distance', text:'A train speeds up uniformly from 8.0 m/s to 22.0 m/s in 12.0 s. How far does it travel in that time?',
+   given:{vi:'8.0 m/s', vf:'22.0 m/s', dt:'12.0 s'}, find:'dx', none:'a', hidden:[],
+   ans:180, sol:['Δx = ½(v_i + v_f)Δt','Δx = ½(8.0 + 22.0)(12.0)','Δx = 180 m']},
+  {tag:'Stopping', text:'A cyclist riding at 6.0 m/s squeezes the brakes and comes to a stop in 1.5 s. What is the cyclist’s acceleration?',
+   given:{vi:'6.0 m/s', vf:'0 m/s', dt:'1.5 s'}, find:'a', none:'dx',
+   hidden:[{k:'vf', t:'“comes to a stop” tells you v<sub>f</sub> = 0.'}],
+   ans:-4.0, sol:['a = (v_f − v_i) / Δt','a = (0 − 6.0) / 1.5','a = −4.0 m/s²  (negative: the cyclist is slowing down)']},
+  {tag:'Unit conversion', text:'A bus is moving at 36.0 km/h when it accelerates at 1.5 m/s² for 4.0 s. What is its final speed?',
+   given:{vi:'10.0 m/s', a:'1.5 m/s²', dt:'4.0 s'}, find:'vf', none:'dx',
+   hidden:[{k:'vi', t:'36.0 km/h ÷ 3.6 = 10.0 m/s. Always convert before substituting.'}],
+   ans:16.0, sol:['v_i = 36.0 ÷ 3.6 = 10.0 m/s','v_f = v_i + aΔt','v_f = 10.0 + (1.5)(4.0)','v_f = 16.0 m/s']},
+  {tag:'From rest', text:'A jet ski starts from rest and accelerates at 2.40 m/s² for 9.00 s. How far does it travel?',
+   given:{vi:'0 m/s', a:'2.40 m/s²', dt:'9.00 s'}, find:'dx', none:'vf',
+   hidden:[{k:'vi', t:'“starts from rest” tells you v<sub>i</sub> = 0.'}],
+   ans:97.2, sol:['Δx = v_iΔt + ½a(Δt)²','Δx = 0 + ½(2.40)(9.00)²','Δx = 97.2 m']},
+  {tag:'Design', text:'A cargo plane needs to reach 80 m/s to take off. Its lowest possible acceleration on the runway is 2.5 m/s², starting from rest. What is the shortest runway it can use?',
+   given:{vi:'0 m/s', vf:'80 m/s', a:'2.5 m/s²'}, find:'dx', none:'dt',
+   hidden:[{k:'vi', t:'The plane starts from rest, so v<sub>i</sub> = 0.'}],
+   ans:1280, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (80² − 0) / (2 × 2.5)','Δx = 1280 m  (about 1.3 km)']},
+  {tag:'Short distance', text:'An arrow is pushed from rest by a bowstring over a distance of 0.500 m and leaves the bow at 64.0 m/s. What is the arrow’s acceleration? (Assume it is uniform.)',
+   given:{vi:'0 m/s', vf:'64.0 m/s', dx:'0.500 m'}, find:'a', none:'dt',
+   hidden:[{k:'vi', t:'The arrow starts from rest, so v<sub>i</sub> = 0.'}],
+   ans:4096, sol:['v_f² = v_i² + 2aΔx','a = (v_f² − v_i²) / 2Δx','a = (64.0² − 0) / (2 × 0.500)','a = 4.10 × 10³ m/s²']},
+  {tag:'Stopping', text:'A baseball moving at 30.0 m/s is caught in a glove. The glove moves back 0.150 m as the ball stops. What is the ball’s acceleration?',
+   given:{vi:'30.0 m/s', vf:'0 m/s', dx:'0.150 m'}, find:'a', none:'dt',
+   hidden:[{k:'vf', t:'The ball stops in the glove, so v<sub>f</sub> = 0.'}],
+   ans:-3000, sol:['v_f² = v_i² + 2aΔx','a = (v_f² − v_i²) / 2Δx','a = (0 − 30.0²) / (2 × 0.150)','a = −3.00 × 10³ m/s²']},
+  {tag:'Free fall', text:'An astronaut drops a wrench from a height of 2.50 m on Mars, where the acceleration due to gravity is 3.71 m/s². How long does it take to reach the ground? (Take up as positive.)',
+   given:{vi:'0 m/s', dx:'−2.50 m', a:'−3.71 m/s²'}, find:'dt', none:'vf',
+   hidden:[{k:'vi', t:'“drops” means it is released from rest, so v<sub>i</sub> = 0.'},{k:'a', t:'Gravity points down. With up positive, a = −3.71 m/s² and Δx = −2.50 m.'}],
+   ans:1.16, sol:['Δx = v_iΔt + ½a(Δt)²   with v_i = 0','Δt = √(2Δx / a)','Δt = √(2 × (−2.50) / (−3.71))','Δt = 1.16 s']},
+  {tag:'Ramp', text:'A skateboarder rolls onto a ramp at 4.0 m/s, accelerates at 1.2 m/s², and reaches the bottom at 7.0 m/s. How long is the ramp?',
+   given:{vi:'4.0 m/s', vf:'7.0 m/s', a:'1.2 m/s²'}, find:'dx', none:'dt', hidden:[],
+   ans:13.75, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (7.0² − 4.0²) / (2 × 1.2)','Δx = 13.8 m']},
+  {tag:'Braking', text:'A car travelling at 25.0 m/s brakes and decelerates at 5.0 m/s² until it stops. What is its stopping distance?',
+   given:{vi:'25.0 m/s', vf:'0 m/s', a:'−5.0 m/s²'}, find:'dx', none:'dt',
+   hidden:[{k:'vf', t:'“until it stops” tells you v<sub>f</sub> = 0.'},{k:'a', t:'“decelerates” means the acceleration is negative: a = −5.0 m/s².'}],
+   ans:62.5, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (0 − 25.0²) / (2 × (−5.0))','Δx = 62.5 m']},
+  {tag:'From rest', text:'A sprinter starts from rest and covers the first 20.0 m of a race in 3.20 s with uniform acceleration. What is her acceleration?',
+   given:{vi:'0 m/s', dx:'20.0 m', dt:'3.20 s'}, find:'a', none:'vf',
+   hidden:[{k:'vi', t:'“starts from rest” tells you v<sub>i</sub> = 0.'}],
+   ans:3.906, sol:['Δx = v_iΔt + ½a(Δt)²   with v_i = 0','a = 2Δx / (Δt)²','a = 2(20.0) / (3.20)²','a = 3.91 m/s²']},
+  {tag:'Time', text:'A car slows uniformly from 20.0 m/s to 8.0 m/s while travelling 70.0 m. How long does this take?',
+   given:{vi:'20.0 m/s', vf:'8.0 m/s', dx:'70.0 m'}, find:'dt', none:'a', hidden:[],
+   ans:5.00, sol:['Δx = ½(v_i + v_f)Δt','Δt = 2Δx / (v_i + v_f)','Δt = 2(70.0) / (20.0 + 8.0)','Δt = 5.00 s']},
+  {tag:'Thrown up', text:'A ball is thrown straight up at 14.7 m/s. How high does it rise above the release point? (Take up as positive.)',
+   given:{vi:'14.7 m/s', vf:'0 m/s', a:'−9.8 m/s²'}, find:'dx', none:'dt',
+   hidden:[{k:'vf', t:'At its highest point the ball stops for an instant, so v<sub>f</sub> = 0.'},{k:'a', t:'Gravity pulls down while up is positive, so a = −9.8 m/s².'}],
+   ans:11.025, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (0 − 14.7²) / (2 × (−9.8))','Δx = 11.0 m']}
+];
+
+const $ = id => document.getElementById(id);
+const solHtml = s => s.replace(/v_i/g,'v<sub>i</sub>').replace(/v_f/g,'v<sub>f</sub>');
+
+function explainWrong(idx, find, none){
+  const m = EQ[idx].missing;
+  if (m === find) return `This equation has no ${sym(find)} in it, so it can’t give you ${sym(find)}.`;
+  return `This equation contains ${sym(none)}, which the problem never gives you. You’d be stuck with two unknowns.`;
+}
+function eqCard(i, tag){
+  const e = EQ[i];
+  return `<${tag} class="eq" data-eq="${i}" ${tag==='button'?'type="button"':''}>
+    <div class="meta"><span class="num">Equation ${i+1}</span><span class="badge">no ${sym(e.missing)}</span></div>
+    <div class="math">${e.html}</div></${tag}>`;
+}
+
+// ---------- ticker tape ----------
+(function(){
+  let s=''; for(let t=0;t<=7;t++){ const x=10+t*t*6.7; s+=`<circle cx="${x.toFixed(1)}" cy="17" r="3.4"/>`; }
+  $('dots').innerHTML = s;
+})();
+
+// ---------- learn tab ----------
+$('varTiles').innerHTML = ORDER.map(k=>`<div class="vtile">${sym(k)}<span>${V[k].name}</span><small>${V[k].unit}</small></div>`).join('');
+$('eqCards').innerHTML = EQ.map((_,i)=>eqCard(i,'div')).join('');
+$('clueBody').innerHTML = CLUES.map(c=>`<tr><td>${c[0]}</td><td>${c[1]}</td></tr>`).join('');
+const pickKeys = ['a','dx','vf','dt'];
+$('picker').innerHTML = pickKeys.map(k=>`<button type="button" class="chip" data-k="${k}" aria-pressed="false">No ${sym(k)}</button>`).join('');
+$('picker').addEventListener('click', e=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  const on = b.getAttribute('aria-pressed') !== 'true';
+  $('picker').querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  const cards = $('eqCards').querySelectorAll('.eq');
+  if(!on){ cards.forEach(c=>c.classList.remove('dim','hit')); $('pickerOut').textContent='Nothing selected yet.'; return; }
+  b.setAttribute('aria-pressed','true');
+  const k = b.dataset.k, idx = eqFor(k);
+  cards.forEach((c,i)=>{ c.classList.toggle('hit', i===idx); c.classList.toggle('dim', i!==idx); });
+  $('pickerOut').innerHTML = `Problem has no ${sym(k)} (${V[k].name}) → use <b>Equation ${idx+1}</b>.`;
+});
+
+// ---------- tabs ----------
+document.querySelector('.tabs').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected', x===t?'true':'false'));
+  ['learn','practice','speed','report'].forEach(n=>$('panel-'+n).hidden = n!==t.dataset.tab);
+  if(t.dataset.tab==='report') renderReport();
+});
+
+// ---------- saved progress (this browser only) ----------
+const STORE='kinematics-picker-v1';
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem(STORE)||'null'); }catch(e){ return null; } }
+function persist(){ try{ localStorage.setItem(STORE, JSON.stringify({S, speed:{rounds:R.rounds,bestScore:R.bestScore,best:R.best}, name:$('stuName').value, cls:$('stuClass').value})); }catch(e){} }
+const saved = loadSaved();
+
+// ---------- guided practice ----------
+const blank = ()=>({cls:{}, s1:null, s1ok:false, hint:false, eqPick:null, eqOk:false, eqMsg:'', input:'', s3:null, solved:false, showSol:false,
+  s1Tries:0, hintUsed:false, eqTries:0, ansTries:0, solPeek:false, solvedAt:null});
+const S = P.map((_,i)=> (saved && saved.S && saved.S[i]) ? Object.assign(blank(), saved.S[i]) : blank());
+let cur = 0;
+
+function expected(p,k){ return k===p.find ? 'find' : (k===p.none ? 'none' : 'given'); }
+
+function renderPractice(){
+  const p = P[cur], st = S[cur];
+  const nav = P.map((_,i)=>`<button type="button" class="pnum ${i===cur?'cur':''} ${S[i].solved?'done':''}" data-i="${i}" aria-label="Problem ${i+1}${S[i].solved?', solved':''}">${i+1}</button>`).join('');
+  const opts = [['given','Given'],['find','Find'],['none','Not in problem']];
+  const rows = ORDER.map(k=>{
+    let cls=''; if(st.s1 && st.s1.checked){ cls = st.cls[k]===expected(p,k)?'good':'bad'; }
+    return `<div class="row ${cls}"><div class="lbl">${sym(k)}<small>${V[k].name}</small></div>
+      <div class="seg" role="group" aria-label="${V[k].name}">${opts.map(o=>`<button type="button" data-k="${k}" data-o="${o[0]}" aria-pressed="${st.cls[k]===o[0]}" ${st.s1ok?'disabled':''}>${o[1]}</button>`).join('')}</div></div>`;
+  }).join('');
+  const hintHtml = st.hint ? `<div class="msg hint">${p.hidden.length ? p.hidden.map(h=>h.t).join('<br>') : 'Every value you need is written as a number in the problem. Read it once for each quantity.'}</div>` : '';
+  const s1msg = st.s1 ? `<div class="msg ${st.s1.ok?'ok':'bad'}">${st.s1.text}</div>` : '';
+  const givens = st.s1ok ? `<div class="givens">${Object.entries(p.given).map(([k,v])=>`<span class="given">${sym(k)} = ${v}</span>`).join('')}<span class="given">${sym(p.find)} = ?</span></div>` : '';
+
+  const eqBtns = EQ.map((_,i)=>eqCard(i,'button')).join('');
+  const s3msg = st.s3 ? `<div class="msg ${st.s3.ok?'ok':'bad'}">${st.s3.text}</div>` : '';
+  const sol = st.showSol ? `<div class="solution">${p.sol.map(l=>`<div>${solHtml(l)}</div>`).join('')}</div>` : '';
+
+  $('panel-practice').innerHTML = `
+    <nav class="pnav" aria-label="Problems">${nav}</nav>
+    <article class="prob">
+      <div class="tag">Problem ${cur+1} of ${P.length} · ${p.tag}</div>
+      <p class="prob-text">${p.text}</p>
+    </article>
+
+    <div class="step ${st.s1ok?'donestep':'active'}">
+      <h3><span>Step 1</span>Sort the five quantities</h3>
+      <div class="rows" id="rows">${rows}</div>
+      <div class="actions">
+        <button type="button" class="btn" id="chk1" ${st.s1ok?'disabled':''}>Check</button>
+        <button type="button" class="btn ghost" id="hint1" ${st.s1ok?'disabled':''}>Hint</button>
+      </div>
+      ${hintHtml}${s1msg}${givens}
+    </div>
+
+    <div class="step ${!st.s1ok?'locked':(st.eqOk?'donestep':'active')}">
+      <h3><span>Step 2</span>Pick the equation with no ${sym(p.none)}</h3>
+      <div class="eqs" id="eqPick">${eqBtns}</div>
+      ${st.eqMsg?`<div class="msg ${st.eqOk?'ok':'bad'}">${st.eqMsg}</div>`:''}
+    </div>
+
+    <div class="step ${!st.eqOk?'locked':(st.solved?'donestep':'active')}">
+      <h3><span>Step 3</span>Solve for ${sym(p.find)}</h3>
+      <form class="ans" id="ansForm" autocomplete="off">
+        <label for="ansIn">${sym(p.find)} =</label>
+        <input id="ansIn" inputmode="decimal" value="${st.input}" placeholder="your answer" aria-label="Your answer">
+        <span class="unit">${V[p.find].unit}</span>
+        <button class="btn" type="submit">Check answer</button>
+        <button class="btn ghost" type="button" id="solBtn">${st.showSol?'Hide':'Show'} solution</button>
+      </form>
+      ${s3msg}${sol}
+    </div>
+
+    <div class="pfoot">
+      <button type="button" class="btn ghost" id="prevP" ${cur===0?'disabled':''}>← Previous</button>
+      <button type="button" class="btn" id="nextP" ${cur===P.length-1?'disabled':''}>Next problem →</button>
+    </div>`;
+
+  // mark eq buttons
+  $('eqPick').querySelectorAll('.eq').forEach((b,i)=>{
+    if(st.eqPick===i) b.classList.add(st.eqOk?'right':'wrong');
+    if(st.eqOk && i!==eqFor(p.none)) b.classList.add('dim');
+  });
+}
+
+$('panel-practice').addEventListener('click', e=>{
+  const p = P[cur], st = S[cur];
+  const nb = e.target.closest('.pnum'); if(nb){ cur=+nb.dataset.i; renderPractice(); return; }
+  const sb = e.target.closest('.seg button');
+  if(sb){ st.cls[sb.dataset.k]=sb.dataset.o; if(st.s1) st.s1.checked=false; st.s1=null; renderPractice(); return; }
+  if(e.target.id==='hint1'){ st.hint=!st.hint; if(st.hint) st.hintUsed=true; renderPractice(); persist(); return; }
+  if(e.target.id==='chk1'){
+    const missing = ORDER.filter(k=>!st.cls[k]);
+    if(missing.length){ st.s1={ok:false,text:`Choose an option for ${missing.map(sym).join(', ')} first.`}; renderPractice(); return; }
+    st.s1Tries++;
+    const finds = ORDER.filter(k=>st.cls[k]==='find').length;
+    const wrong = ORDER.filter(k=>st.cls[k]!==expected(p,k));
+    if(!wrong.length){
+      st.s1ok=true; st.s1={ok:true,checked:true,text:`Correct. The problem never involves ${sym(p.none)} (${V[p.none].name}), so that is the quantity to leave out.`};
+    } else {
+      let t = `${wrong.length} to fix (shown in red).`;
+      const hiddenMiss = p.hidden.find(h=>st.cls[h.k]==='none' || (st.cls[h.k]!=='given' && expected(p,h.k)==='given'));
+      if(finds!==1) t += ' There is exactly one quantity to find.';
+      else if(hiddenMiss) t += ` Read the wording again: one value is hidden in words, not numbers.`;
+      else t += ' Check which quantities actually appear in the problem.';
+      st.s1={ok:false,checked:true,text:t};
+    }
+    renderPractice(); persist(); return;
+  }
+  const eb = e.target.closest('#eqPick .eq');
+  if(eb && !st.eqOk){
+    const i=+eb.dataset.eq; st.eqPick=i; st.eqTries++;
+    if(i===eqFor(p.none)){ st.eqOk=true; st.eqMsg=`Yes. Equation ${i+1} links ${ORDER.filter(k=>k!==p.none).map(sym).join(', ')}: your three givens and your unknown.`; }
+    else st.eqMsg = explainWrong(i,p.find,p.none);
+    renderPractice(); persist(); return;
+  }
+  if(e.target.id==='solBtn'){ st.input=$('ansIn').value; st.showSol=!st.showSol; if(st.showSol && !st.solved) st.solPeek=true; renderPractice(); persist(); return; }
+  if(e.target.id==='prevP'){ cur--; renderPractice(); return; }
+  if(e.target.id==='nextP'){ cur++; renderPractice(); return; }
+});
+$('panel-practice').addEventListener('input', e=>{ if(e.target.id==='ansIn') S[cur].input=e.target.value; });
+$('panel-practice').addEventListener('submit', e=>{
+  e.preventDefault();
+  const p=P[cur], st=S[cur];
+  const raw = $('ansIn').value.trim().replace(/\s/g,'').replace('−','-').replace(/[x×]10\^?/i,'e');
+  const v = parseFloat(raw); st.input=$('ansIn').value;
+  if(isNaN(v)){ st.s3={ok:false,text:'Type a number, for example 12.5 or -4.0.'}; renderPractice(); return; }
+  if(st.solved) return;
+  st.ansTries++;
+  const tol = Math.abs(p.ans)*0.02;
+  if(Math.abs(v-p.ans)<=tol){ st.solved=true; st.solvedAt=Date.now(); st.s3={ok:true,text:`Correct: ${sym(p.find)} ≈ ${p.sol[p.sol.length-1].split('=').pop().trim()}`}; }
+  else if(Math.abs(-v-p.ans)<=tol){ st.s3={ok:false,text:'The size is right but the sign is wrong. Is the object speeding up or slowing down? Which way is positive?'}; }
+  else st.s3={ok:false,text:'Not quite. Check the rearranged equation, your substitution, and that you squared the right terms.'};
+  renderPractice(); persist();
+});
+renderPractice();
+
+// ---------- speed round ----------
+const TOTAL = 10;
+const R = {n:0, score:0, streak:0, best:0, q:null, picked:null, done:false, rounds:0, bestScore:null};
+if(saved && saved.speed){ R.rounds=saved.speed.rounds||0; R.bestScore=saved.speed.bestScore??null; R.best=saved.speed.best||0; }
+function newQ(){
+  const none = pickKeys[Math.floor(Math.random()*4)];
+  const rest = ORDER.filter(k=>k!==none);
+  const find = rest[Math.floor(Math.random()*4)];
+  R.q = {none, find, givens: rest.filter(k=>k!==find)}; R.picked=null;
+}
+function renderSpeed(){
+  if(R.done){
+    $('panel-speed').innerHTML = `<div class="speed"><div class="card-q">
+      <h2>${R.score} / ${TOTAL}</h2>
+      <p>${R.score===TOTAL?'Perfect round. You can spot the missing quantity instantly.':R.score>=7?'Strong round. Try again and aim for 10.':'Go back to “How to choose” and look at which quantity each equation leaves out, then try again.'}</p>
+      <p>Best streak: <b>${R.best}</b></p>
+      <div class="actions"><button type="button" class="btn" id="again">Play again</button></div></div></div>`;
+    return;
+  }
+  const q=R.q, ans=eqFor(q.none);
+  let fb='';
+  if(R.picked!==null){
+    fb = R.picked===ans
+      ? `<div class="msg ok">Right. No ${sym(q.none)} anywhere, so Equation ${ans+1}.</div>`
+      : `<div class="msg bad">${explainWrong(R.picked,q.find,q.none)} The answer is Equation ${ans+1}.</div>`;
+  }
+  $('panel-speed').innerHTML = `<div class="speed">
+    <p>You see only the symbols. Pick the equation as fast as you can.</p>
+    <div class="scorebar"><div><small>Question</small><b>${Math.min(R.n+1,TOTAL)}/${TOTAL}</b></div><div><small>Score</small><b>${R.score}</b></div><div><small>Streak</small><b>${R.streak}</b></div><div><small>Best</small><b>${R.best}</b></div></div>
+    <div class="progress"><i style="width:${R.n/TOTAL*100}%"></i></div>
+    <div class="card-q">
+      <div class="qline"><span class="k">Given</span>${q.givens.map(sym).join(', ')}</div>
+      <div class="qline"><span class="k">Find</span>${sym(q.find)}</div>
+    </div>
+    <div class="eqs" id="speedEqs">${EQ.map((_,i)=>eqCard(i,'button')).join('')}</div>
+    ${fb}
+    ${R.picked!==null?`<div class="actions"><button type="button" class="btn" id="nextQ">${R.n+1>=TOTAL?'See result':'Next →'}</button></div>`:''}
+  </div>`;
+  if(R.picked!==null){
+    $('speedEqs').querySelectorAll('.eq').forEach((b,i)=>{
+      if(i===ans) b.classList.add('right'); else if(i===R.picked) b.classList.add('wrong'); else b.classList.add('dim');
+    });
+  }
+}
+$('panel-speed').addEventListener('click', e=>{
+  const b = e.target.closest('#speedEqs .eq');
+  if(b && R.picked===null){
+    R.picked=+b.dataset.eq;
+    if(R.picked===eqFor(R.q.none)){ R.score++; R.streak++; R.best=Math.max(R.best,R.streak); } else R.streak=0;
+    renderSpeed(); return;
+  }
+  if(e.target.id==='nextQ'){ R.n++;
+    if(R.n>=TOTAL){ R.done=true; R.rounds++; R.bestScore=Math.max(R.bestScore??0,R.score); persist(); } else newQ();
+    renderSpeed(); return; }
+  if(e.target.id==='again'){ Object.assign(R,{n:0,score:0,streak:0,done:false}); newQ(); renderSpeed(); }
+});
+newQ(); renderSpeed();
+
+// ---------- report ----------
+function pts(st){
+  const sort = !st.s1ok?0 : (st.s1Tries===1 && !st.hintUsed)?3 : (st.s1Tries<=2?2:1);
+  const eq = !st.eqOk?0 : (st.eqTries===1?3:1);
+  const ans = !st.solved?0 : (st.solPeek?1:4);
+  return {sort, eq, ans, total:sort+eq+ans};
+}
+function summary(){
+  const rows = P.map((p,i)=>({i, p, st:S[i], s:pts(S[i])}));
+  const practice = rows.reduce((a,r)=>a+r.s.total,0), max = P.length*10;
+  const solved = rows.filter(r=>r.st.solved).length;
+  const pPct = practice/max*100;
+  const sPct = R.bestScore==null ? 0 : R.bestScore/TOTAL*100;
+  const grade = Math.round(pPct*0.8 + sPct*0.2);
+  return {rows, practice, max, solved, pPct, sPct, grade};
+}
+const KEY = 'Each problem is worth 10 points. Sort the quantities: 3 on the first try without a hint, 2 within two tries, 1 after that. Pick the equation: 3 on the first try, 1 after that. Answer: 4 if correct before viewing the solution, 1 if solved after viewing it. Final grade = 80% guided practice + 20% best speed round.';
+function renderReport(){
+  const m = summary();
+  $('repTiles').innerHTML = `
+    <div class="tile main"><small>Grade</small><b>${m.grade}%</b></div>
+    <div class="tile"><small>Problems solved</small><b>${m.solved}/${P.length}</b></div>
+    <div class="tile"><small>Practice points</small><b>${m.practice}/${m.max}</b></div>
+    <div class="tile"><small>Best speed round</small><b>${R.bestScore==null?'–':R.bestScore+'/'+TOTAL}</b></div>`;
+  $('repTable').innerHTML = `<thead><tr><th>#</th><th>Problem</th><th>Sort</th><th>Equation</th><th>Answer</th><th>Points</th></tr></thead><tbody>${
+    m.rows.map(r=>`<tr><td>${r.i+1}</td><td>${r.p.tag}</td><td>${r.s.sort}/3</td><td>${r.s.eq}/3</td><td>${r.st.solved?`<span class="pill ok">${r.s.ans}/4</span>`:'<span class="pill no">not yet</span>'}</td><td><b>${r.s.total}</b>/10</td></tr>`).join('')}</tbody>`;
+  $('repKey').textContent = KEY;
+}
+if(saved){ $('stuName').value=saved.name||''; $('stuClass').value=saved.cls||''; }
+$('stuName').addEventListener('input', persist);
+$('stuClass').addEventListener('input', persist);
+
+function code(str){ let h=2166136261; for(const c of str){ h^=c.charCodeAt(0); h=Math.imul(h,16777619)>>>0; } return h.toString(36).toUpperCase().padStart(7,'0'); }
+
+function buildPdf(name, cls){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const m = summary(), W = doc.internal.pageSize.getWidth(), L = 48;
+  const now = new Date();
+  const stamp = now.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  let y = 56;
+  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.text('Kinematics Equation Picker', L, y);
+  y+=20; doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(90); doc.text('Completion report  |  Grade 12 Physics  |  1-D motion', L, y);
+  doc.setTextColor(0); y+=14; doc.setDrawColor(200); doc.line(L, y, W-L, y);
+  y+=26; doc.setFontSize(12);
+  const info=[['Student',name],['Class',cls||'-'],['Generated',stamp]];
+  info.forEach(([k,v])=>{ doc.setFont('helvetica','bold'); doc.text(k+':', L, y); doc.setFont('helvetica','normal'); doc.text(String(v), L+80, y); y+=18; });
+  // summary boxes
+  y+=8; const bw=(W-2*L-30)/4, boxes=[['GRADE',m.grade+'%'],['SOLVED',m.solved+' / '+P.length],['PRACTICE',m.practice+' / '+m.max],['SPEED ROUND',R.bestScore==null?'not played':R.bestScore+' / '+TOTAL]];
+  boxes.forEach((b,i)=>{ const x=L+i*(bw+10); doc.setDrawColor(i===0?20:190); doc.setLineWidth(i===0?1.6:.8); doc.roundedRect(x,y,bw,52,6,6);
+    doc.setFontSize(8); doc.setTextColor(100); doc.text(b[0], x+10, y+16); doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(b[1].length>9?12:17); doc.text(b[1], x+10, y+40); doc.setFont('helvetica','normal'); });
+  doc.setLineWidth(.8);
+  y+=78;
+  // table
+  const cols=[['#',L],['Problem',L+28],['Sort',L+190],['Equation',L+245],['Answer',L+318],['Status',L+378],['Points',W-L-46]];
+  doc.setFillColor(236,240,245); doc.rect(L, y-13, W-2*L, 20, 'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); cols.forEach(([t,x])=>doc.text(t,x,y)); doc.setFont('helvetica','normal');
+  y+=20;
+  m.rows.forEach(r=>{
+    const st=r.st, status = st.solved ? (st.solPeek?'solved after solution':'solved') : (st.eqOk?'answer missing':(st.s1ok?'equation missing':'not started'));
+    const vals=[String(r.i+1), r.p.tag, r.s.sort+'/3', r.s.eq+'/3', r.s.ans+'/4', status, r.s.total+'/10'];
+    vals.forEach((v,j)=>{ if(j===6) doc.setFont('helvetica','bold'); doc.text(v, cols[j][1], y); doc.setFont('helvetica','normal'); });
+    doc.setDrawColor(225); doc.line(L, y+6, W-L, y+6); y+=19;
+  });
+  y+=6; doc.setFont('helvetica','bold'); doc.text('Total', L+28, y); doc.text(m.practice+'/'+m.max, W-L-46, y); doc.setFont('helvetica','normal');
+  y+=26; doc.setFontSize(9); doc.setTextColor(90);
+  doc.splitTextToSize('Scoring: '+KEY, W-2*L).forEach(l=>{ doc.text(l, L, y); y+=12; });
+  const payload = [name, cls, m.grade, m.practice, R.bestScore, m.rows.map(r=>r.s.total).join(''), now.toISOString().slice(0,16)].join('|');
+  y+=8; doc.text('Completion code: '+code(payload)+'   (generated '+now.toISOString().slice(0,16).replace('T',' ')+' UTC)', L, y);
+  doc.setTextColor(0);
+  return doc;
+}
+
+$('pdfBtn').addEventListener('click', async ()=>{
+  const name=$('stuName').value.trim(), cls=$('stuClass').value.trim();
+  const msg=$('pdfMsg');
+  if(!name){ msg.textContent='Enter your full name first.'; $('stuName').focus(); return; }
+  if(!window.jspdf){ msg.textContent='The PDF tool did not load. Check your internet connection and reload the page.'; return; }
+  const doc = buildPdf(name, cls);
+  const filename = `Kinematics report - ${name.replace(/[^\p{L}\p{N} .-]/gu,'')}.pdf`;
+  let downloads = null;
+  try{ downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; }catch(e){ downloads=null; }
+  if(downloads){
+    try{ await downloads.save({filename, data: doc.output('blob')}); msg.textContent='Report saved.'; }
+    catch(err){ msg.textContent = err && err.code==='declined' ? 'Download cancelled.' : 'This view can’t save files. Take a screenshot of this page instead.'; }
+  } else if(!window.claude){
+    doc.save(filename); msg.textContent='Report downloaded.';
+  } else {
+    msg.textContent='This view can’t save files. Take a screenshot of this page instead.';
+  }
+});
+
+$('resetBtn').addEventListener('click', ()=>{ $('resetConfirm').hidden=false; });
+$('resetNo').addEventListener('click', ()=>{ $('resetConfirm').hidden=true; });
+$('resetYes').addEventListener('click', ()=>{
+  S.forEach((_,i)=>S[i]=blank()); Object.assign(R,{n:0,score:0,streak:0,best:0,done:false,rounds:0,bestScore:null});
+  newQ(); renderSpeed(); cur=0; renderPractice(); persist(); renderReport(); $('resetConfirm').hidden=true;
+});
+})();
+</script>
