@@ -81,6 +81,7 @@ button.eq:hover{border-color:var(--muted)}
 .chip{border:2px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;font-size:.95rem}
 .chip[aria-pressed="true"]{border-color:var(--ink);background:var(--soft)}
 .picker-out{min-height:1.6em;color:var(--muted)}
+.note{background:var(--warn-bg);border-left:4px solid var(--c-a);border-radius:8px;padding:10px 14px}
 
 ol.method{margin:0;padding-left:1.4em;display:grid;gap:6px;max-width:65ch}
 ol.method li::marker{font-family:var(--f-mono);font-weight:600;color:var(--muted)}
@@ -164,7 +165,7 @@ ol.method li::marker{font-family:var(--f-mono);font-weight:600;color:var(--muted
 
 <div class="wrap">
   <header class="top">
-    <div class="eyebrow">Grade 12 Physics · 1-D motion</div>
+    <div class="eyebrow">Physics · 1-D motion · constant acceleration</div>
     <h1>Which kinematic equation do I use?</h1>
     <p class="lede">Every constant-acceleration problem involves five quantities, and each equation leaves exactly one of them out. Find the quantity your problem never mentions, and you have found your equation.</p>
     <div class="tape" aria-hidden="true">
@@ -192,6 +193,7 @@ ol.method li::marker{font-family:var(--f-mono);font-weight:600;color:var(--muted
 
       <div class="section">
         <h2>The four equations</h2>
+        <p class="note">These four equations work <b>only when the acceleration is constant</b>. Every problem in this app assumes constant acceleration.</p>
         <p>Each card shows the one quantity that equation does <b>not</b> contain. Tap the quantity your problem leaves out.</p>
         <div class="chips" id="picker" aria-label="Quantity left out of the problem"></div>
         <p class="picker-out" id="pickerOut">Nothing selected yet.</p>
@@ -274,9 +276,10 @@ const CLUES = [
   ['“comes to a stop”, “brought to rest”', `${sym('vf')} = 0`],
   ['“dropped”', `${sym('vi')} = 0 and ${sym('a')} = −9.8 m/s² (on Earth, up positive)`],
   ['“reaches its highest point”', `${sym('vf')} = 0 at the top`],
-  ['“slows down”, “decelerates”, “brakes”', `${sym('a')} is opposite to the motion, so it is negative`],
+  ['“slows down”, “decelerates”, “brakes”', `${sym('a')} points opposite to the velocity. If the object moves in the + direction, ${sym('a')} is negative`],
   ['a speed in km/h', 'divide by 3.6 to get m/s'],
-  ['“uniformly”, “steadily”', `${sym('a')} is constant, so these equations apply`]
+  ['“accelerates uniformly”, “constant acceleration”', `${sym('a')} is constant, so these equations apply`],
+  ['“constant speed”, “steady speed”', `${sym('a')} = 0 (the velocity is not changing)`]
 ];
 
 const P = [
@@ -289,7 +292,7 @@ const P = [
   {tag:'Stopping', text:'A cyclist riding at 6.0 m/s squeezes the brakes and comes to a stop in 1.5 s. What is the cyclist’s acceleration?',
    given:{vi:'6.0 m/s', vf:'0 m/s', dt:'1.5 s'}, find:'a', none:'dx',
    hidden:[{k:'vf', t:'“comes to a stop” tells you v<sub>f</sub> = 0.'}],
-   ans:-4.0, sol:['a = (v_f − v_i) / Δt','a = (0 − 6.0) / 1.5','a = −4.0 m/s²  (negative: the cyclist is slowing down)']},
+   ans:-4.0, sol:['a = (v_f − v_i) / Δt','a = (0 − 6.0) / 1.5','a = −4.0 m/s²  (negative: a points opposite to the cyclist’s motion)']},
   {tag:'Unit conversion', text:'A bus is moving at 36.0 km/h when it accelerates at 1.5 m/s² for 4.0 s. What is its final speed?',
    given:{vi:'10.0 m/s', a:'1.5 m/s²', dt:'4.0 s'}, find:'vf', none:'dx',
    hidden:[{k:'vi', t:'36.0 km/h ÷ 3.6 = 10.0 m/s. Always convert before substituting.'}],
@@ -319,7 +322,7 @@ const P = [
    ans:13.75, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (7.0² − 4.0²) / (2 × 1.2)','Δx = 13.8 m']},
   {tag:'Braking', text:'A car travelling at 25.0 m/s brakes and decelerates at 5.0 m/s² until it stops. What is its stopping distance?',
    given:{vi:'25.0 m/s', vf:'0 m/s', a:'−5.0 m/s²'}, find:'dx', none:'dt',
-   hidden:[{k:'vf', t:'“until it stops” tells you v<sub>f</sub> = 0.'},{k:'a', t:'“decelerates” means the acceleration is negative: a = −5.0 m/s².'}],
+   hidden:[{k:'vf', t:'“until it stops” tells you v<sub>f</sub> = 0.'},{k:'a', t:'The car moves in the + direction and slows down, so a points backward: a = −5.0 m/s².'}],
    ans:62.5, sol:['v_f² = v_i² + 2aΔx','Δx = (v_f² − v_i²) / 2a','Δx = (0 − 25.0²) / (2 × (−5.0))','Δx = 62.5 m']},
   {tag:'From rest', text:'A sprinter starts from rest and covers the first 20.0 m of a race in 3.20 s with uniform acceleration. What is her acceleration?',
    given:{vi:'0 m/s', dx:'20.0 m', dt:'3.20 s'}, find:'a', none:'vf',
@@ -611,7 +614,7 @@ function buildPdf(name, cls){
   const stamp = now.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
   let y = 56;
   doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.text('Kinematics Equation Picker', L, y);
-  y+=20; doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(90); doc.text('Completion report  |  Grade 12 Physics  |  1-D motion', L, y);
+  y+=20; doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(90); doc.text('Completion report  |  Physics  |  1-D motion, constant acceleration', L, y);
   doc.setTextColor(0); y+=14; doc.setDrawColor(200); doc.line(L, y, W-L, y);
   y+=26; doc.setFontSize(12);
   const info=[['Student',name],['Class',cls||'-'],['Generated',stamp]];
@@ -623,19 +626,21 @@ function buildPdf(name, cls){
   doc.setLineWidth(.8);
   y+=78;
   // table
-  const cols=[['#',L],['Problem',L+28],['Sort',L+190],['Equation',L+245],['Answer',L+318],['Status',L+378],['Points',W-L-46]];
+  const R_=W-L;
+  const cols=[['#',L,'l'],['Problem',L+24,'l'],['Sort',L+150,'l'],['Equation',L+196,'l'],['Answer',L+262,'l'],['Status',L+316,'l'],['Points',R_,'r']];
+  const put=(t,c,yy)=>doc.text(t, c[1], yy, c[2]==='r'?{align:'right'}:undefined);
   doc.setFillColor(236,240,245); doc.rect(L, y-13, W-2*L, 20, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); cols.forEach(([t,x])=>doc.text(t,x,y)); doc.setFont('helvetica','normal');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); cols.forEach(c=>put(c[0],c,y)); doc.setFont('helvetica','normal');
   y+=20;
   m.rows.forEach(r=>{
-    const st=r.st, status = st.solved ? (st.solPeek?'solved after solution':'solved') : (st.eqOk?'answer missing':(st.s1ok?'equation missing':'not started'));
+    const st=r.st, status = st.solved ? (st.solPeek?'solved after solution':'solved') : (st.eqOk?'needs answer':(st.s1ok?'needs equation':'not started'));
     const vals=[String(r.i+1), r.p.tag, r.s.sort+'/3', r.s.eq+'/3', r.s.ans+'/4', status, r.s.total+'/10'];
-    vals.forEach((v,j)=>{ if(j===6) doc.setFont('helvetica','bold'); doc.text(v, cols[j][1], y); doc.setFont('helvetica','normal'); });
+    vals.forEach((v,j)=>{ if(j===6) doc.setFont('helvetica','bold'); put(v, cols[j], y); doc.setFont('helvetica','normal'); });
     doc.setDrawColor(225); doc.line(L, y+6, W-L, y+6); y+=19;
   });
-  y+=6; doc.setFont('helvetica','bold'); doc.text('Total', L+28, y); doc.text(m.practice+'/'+m.max, W-L-46, y); doc.setFont('helvetica','normal');
+  y+=6; doc.setFont('helvetica','bold'); doc.text('Total', L+24, y); doc.text(m.practice+'/'+m.max, R_, y, {align:'right'}); doc.setFont('helvetica','normal');
   y+=26; doc.setFontSize(9); doc.setTextColor(90);
-  doc.splitTextToSize('Scoring: '+KEY, W-2*L).forEach(l=>{ doc.text(l, L, y); y+=12; });
+  doc.splitTextToSize('Scoring: '+KEY+' This is a formative record: progress is stored on the student\'s own device.', W-2*L).forEach(l=>{ doc.text(l, L, y); y+=12; });
   const payload = [name, cls, m.grade, m.practice, R.bestScore, m.rows.map(r=>r.s.total).join(''), now.toISOString().slice(0,16)].join('|');
   y+=8; doc.text('Completion code: '+code(payload)+'   (generated '+now.toISOString().slice(0,16).replace('T',' ')+' UTC)', L, y);
   doc.setTextColor(0);
