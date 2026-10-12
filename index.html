@@ -445,14 +445,17 @@ function renderPractice(){
         <input id="ansIn" inputmode="decimal" value="${st.input}" placeholder="your answer" aria-label="Your answer">
         <span class="unit">${V[p.find].unit}</span>
         <button class="btn" type="submit">Check answer</button>
-        <button class="btn ghost" type="button" id="solBtn">${st.showSol?'Hide':'Show'} solution</button>
+        <button class="btn ghost" type="button" id="solBtn" ${(!st.solved && !st.ansTries)?'disabled':''}>${st.showSol?'Hide':'Show'} solution</button>
       </form>
+      ${(!st.solved && !st.ansTries)?'<p class="picker-out">The solution unlocks after you check an answer.</p>':''}
       ${s3msg}${sol}
     </div>
 
     <div class="pfoot">
       <button type="button" class="btn ghost" id="prevP" ${cur===0?'disabled':''}>← Previous</button>
-      <button type="button" class="btn" id="nextP" ${cur===P.length-1?'disabled':''}>Next problem →</button>
+      ${cur===P.length-1
+        ? `<button type="button" class="btn" id="toReport">${S.every(x=>x.solved)?'All done! Go to my report →':'Go to my report →'}</button>`
+        : `<button type="button" class="btn" id="nextP">Next problem →</button>`}
     </div>`;
 
   // mark eq buttons
@@ -493,15 +496,17 @@ $('panel-practice').addEventListener('click', e=>{
     else st.eqMsg = explainWrong(i,p.find,p.none);
     renderPractice(); persist(); return;
   }
-  if(e.target.id==='solBtn'){ st.input=$('ansIn').value; st.showSol=!st.showSol; if(st.showSol && !st.solved) st.solPeek=true; renderPractice(); persist(); return; }
+  if(e.target.id==='solBtn'){ if(!st.solved && !st.ansTries) return; st.input=$('ansIn').value; st.showSol=!st.showSol; if(st.showSol && !st.solved) st.solPeek=true; renderPractice(); persist(); return; }
   if(e.target.id==='prevP'){ cur--; renderPractice(); return; }
   if(e.target.id==='nextP'){ cur++; renderPractice(); return; }
+  if(e.target.id==='toReport'){ $('tab-report').click(); window.scrollTo(0,0); return; }
 });
 $('panel-practice').addEventListener('input', e=>{ if(e.target.id==='ansIn') S[cur].input=e.target.value; });
 $('panel-practice').addEventListener('submit', e=>{
   e.preventDefault();
   const p=P[cur], st=S[cur];
-  const raw = $('ansIn').value.trim().replace(/\s/g,'').replace('−','-').replace(/[x×]10\^?/i,'e');
+  let raw = $('ansIn').value.trim().replace(/\s/g,'').replace(/[−–]/g,'-').replace(/[x×*]10\^?/i,'e');
+  if(!raw.includes('.') && /^-?\d+,\d+/.test(raw)) raw = raw.replace(',','.');
   const v = parseFloat(raw); st.input=$('ansIn').value;
   if(isNaN(v)){ st.s3={ok:false,text:'Type a number, for example 12.5 or -4.0.'}; renderPractice(); return; }
   if(st.solved) return;
