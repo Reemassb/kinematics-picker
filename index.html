@@ -454,7 +454,7 @@ function renderPractice(){
     <div class="pfoot">
       <button type="button" class="btn ghost" id="prevP" ${cur===0?'disabled':''}>← Previous</button>
       ${cur===P.length-1
-        ? `<button type="button" class="btn" id="toReport">${S.every(x=>x.solved)?'All done! Go to my report →':'Go to my report →'}</button>`
+        ? `<button type="button" class="btn" id="toSpeed">${S.every(x=>x.solved)?'All done! Go to the speed round →':'Go to the speed round →'}</button>`
         : `<button type="button" class="btn" id="nextP">Next problem →</button>`}
     </div>`;
 
@@ -499,7 +499,7 @@ $('panel-practice').addEventListener('click', e=>{
   if(e.target.id==='solBtn'){ if(!st.solved && !st.ansTries) return; st.input=$('ansIn').value; st.showSol=!st.showSol; if(st.showSol && !st.solved) st.solPeek=true; renderPractice(); persist(); return; }
   if(e.target.id==='prevP'){ cur--; renderPractice(); return; }
   if(e.target.id==='nextP'){ cur++; renderPractice(); return; }
-  if(e.target.id==='toReport'){ $('tab-report').click(); window.scrollTo(0,0); return; }
+  if(e.target.id==='toSpeed'){ $('tab-speed').click(); window.scrollTo(0,0); return; }
 });
 $('panel-practice').addEventListener('input', e=>{ if(e.target.id==='ansIn') S[cur].input=e.target.value; });
 $('panel-practice').addEventListener('submit', e=>{
@@ -534,8 +534,8 @@ function renderSpeed(){
     $('panel-speed').innerHTML = `<div class="speed"><div class="card-q">
       <h2>${R.score} / ${TOTAL}</h2>
       <p>${R.score===TOTAL?'Perfect round. You can spot the missing quantity instantly.':R.score>=7?'Strong round. Try again and aim for 10.':'Go back to “How to choose” and look at which quantity each equation leaves out, then try again.'}</p>
-      <p>Best streak: <b>${R.best}</b></p>
-      <div class="actions"><button type="button" class="btn" id="again">Play again</button></div></div></div>`;
+      <p>Best streak: <b>${R.best}</b> · Only your best round counts.</p>
+      <div class="actions"><button type="button" class="btn" id="toReport2">Go to my report →</button><button type="button" class="btn ghost" id="again">Play again</button></div></div></div>`;
     return;
   }
   const q=R.q, ans=eqFor(q.none);
@@ -573,6 +573,7 @@ $('panel-speed').addEventListener('click', e=>{
   if(e.target.id==='nextQ'){ R.n++;
     if(R.n>=TOTAL){ R.done=true; R.rounds++; R.bestScore=Math.max(R.bestScore??0,R.score); persist(); } else newQ();
     renderSpeed(); return; }
+  if(e.target.id==='toReport2'){ $('tab-report').click(); window.scrollTo(0,0); return; }
   if(e.target.id==='again'){ Object.assign(R,{n:0,score:0,streak:0,done:false}); newQ(); renderSpeed(); }
 });
 newQ(); renderSpeed();
